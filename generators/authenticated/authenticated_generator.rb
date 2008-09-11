@@ -4,7 +4,8 @@ class AuthenticatedGenerator < Rails::Generator::NamedBase
   default_options :skip_migration => false,
                   :skip_routes    => false,
                   :old_passwords  => false,
-                  :include_activation => false
+                  :include_activation => false,
+                  :active_directory => false
 
   attr_reader   :controller_name,
                 :controller_class_path,
@@ -143,6 +144,12 @@ class AuthenticatedGenerator < Rails::Generator::NamedBase
 
       m.template 'site_keys.rb', site_keys_file
 
+      if options[:active_directory]
+  			m.template 'restful_authentication.yml',
+                    File.join('config',
+                              "restful_authentication.yml")
+      end
+      
       if @rspec
         # RSpec Specs
         m.template  'spec/controllers/users_controller_spec.rb',
@@ -173,7 +180,6 @@ class AuthenticatedGenerator < Rails::Generator::NamedBase
                     File.join('spec/fixtures',
                                class_path,
                               "#{table_name}.yml")
-
         # RSpec Stories
         m.template  'stories/steps/ra_navigation_steps.rb',
          File.join('stories/steps/ra_navigation_steps.rb')
@@ -287,6 +293,10 @@ class AuthenticatedGenerator < Rails::Generator::NamedBase
         puts  "  and modify the map.resources :#{model_controller_file_name} line to include these actions:"
         puts  "    map.resources :#{model_controller_file_name}, :member => { :suspend => :put, :unsuspend => :put, :purge => :delete }"
       end
+      if options[:active_directory]
+        puts "- Modify config/restful_authentication.yml to point to your Active Directory server"
+        puts "- Install ruby-ldap (http://ruby-ldap.sourceforge.net/)"
+      end
       puts
       puts ("-" * 70)
       puts
@@ -384,6 +394,8 @@ protected
   def add_options!(opt)
     opt.separator ''
     opt.separator 'Options:'
+    opt.on("--active_directory",
+      "Enable active directory authentication")                   { |v| options[:active_directory] = v }
     opt.on("--skip-migration",
       "Don't generate a migration file for this model")           { |v| options[:skip_migration] = v }
     opt.on("--include-activation",

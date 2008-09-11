@@ -4,6 +4,8 @@ class <%= class_name %> < ActiveRecord::Base
   include Authentication
   include Authentication::ByPassword
   include Authentication::ByCookieToken
+<% if options[:active_directory] -%>
+  include Authentication::ByActiveDirectory<% end %>
 <% if options[:aasm] -%>
   include Authorization::AasmRoles
 <% elsif options[:stateful] -%>
@@ -26,7 +28,7 @@ class <%= class_name %> < ActiveRecord::Base
   # HACK HACK HACK -- how to do attr_accessible from here?
   # prevents a user from submitting a crafted form that bypasses activation
   # anything else you want your user to change should be added here.
-  attr_accessible :login, :email, :name, :password, :password_confirmation
+  attr_accessible :login, :email, :name, :password, :password_confirmation<% if options[:active_directory] %>, :using_active_directory<% end %>
 
 <% if options[:include_activation] && !options[:stateful] %>
   # Activates the user in the database.
@@ -53,6 +55,17 @@ class <%= class_name %> < ActiveRecord::Base
   # We really need a Dispatch Chain here or something.
   # This will also let us return a human error message.
   #
+<% if options[:active_directory] %>
+  def self.authenticate(login, password, options = {})
+    return nil if login.blank? || password.blank?    
+    u = find_by_login(login)
+    if u && u.using_active_directory?
+      u.ad_authenticated?(password) ? u : nil
+    else
+      u && u.authenticated?(password) ? u : nil
+    end
+  end
+<% else %>
   def self.authenticate(login, password)
     return nil if login.blank? || password.blank?
     u = <% if    options[:stateful]           %>find_in_state :first, :active, :conditions => {:login => login}<%
@@ -60,6 +73,7 @@ class <%= class_name %> < ActiveRecord::Base
            else %>find_by_login(login)<% end %> # need to get the salt
     u && u.authenticated?(password) ? u : nil
   end
+<% end %>
 
   def login=(value)
     write_attribute :login, (value ? value.downcase : nil)

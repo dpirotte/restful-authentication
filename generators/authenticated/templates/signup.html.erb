@@ -15,5 +15,10 @@
 <p><%%= label_tag 'password_confirmation', 'Confirm Password' %><br/>
 <%%= f.password_field :password_confirmation %></p>
 
+<% if options[:active_directory] %>
+<p><%%= label_tag 'using_active_directory', 'Using Active Directory?' %><br/>
+<%%= f.check_box :using_active_directory %></p>
+<% end %>
+
 <p><%%= submit_tag 'Sign up' %></p>
 <%% end -%>

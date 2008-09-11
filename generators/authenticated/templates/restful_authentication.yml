@@ -1,0 +1,5 @@
+active_directory:
+  host: activedirectory.example.com
+  port: 389
+  domain: example.com
+  dn: cn=Users,dc=example,dc=com
